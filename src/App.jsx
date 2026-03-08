@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 
 // --- Currency definitions ---
 const CURRENCIES = {
@@ -131,6 +130,7 @@ export default function App() {
 
   // -- Section 1b - Assumption --
   const [expensesPct, setExpensesPct] = useState('')
+  const [productName, setProductName] = useState('')
 
   // ── Section 2 ──
   const [boxLength, setBoxLength] = useState('')
@@ -233,203 +233,190 @@ export default function App() {
     expensesPct, usdToDisplayRate,
   ])
 
-  const downloadPDF = () => {
+  const buildPDF = () => {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
     const blue = [37, 99, 235]
     const lightBlue = [239, 246, 255]
     const darkText = [30, 42, 74]
-    const muted = [75, 90, 133]
+    const muted = [100, 116, 139]
     const pageW = doc.internal.pageSize.getWidth()
     let y = 0
 
-    // ── Header banner ──
+    // Header
     doc.setFillColor(...blue)
-    doc.rect(0, 0, pageW, 22, 'F')
+    doc.rect(0, 0, pageW, 30, 'F')
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(160, 200, 255)
+    doc.text('IMPORT CALCULATION REPORT', 14, 9)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(18)
     doc.setTextColor(255, 255, 255)
-    doc.text('Import Calculator: Summary', 14, 14)
-    doc.setFontSize(9)
+    doc.text(productName || 'Unnamed Product', 14, 21)
     doc.setFont('helvetica', 'normal')
-    doc.text(`Generated: ${new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageW - 14, 10, { align: 'right' })
-    doc.text(`Currency: ${displayCurrency} (${sym}) | Supplier: ${supplierCurrency}${supplierCurrency !== displayCurrency ? ` @ ${supConvRate.toFixed(4)} rate` : ''}`, pageW - 14, 16, { align: 'right' })
-    y = 30
+    doc.setFontSize(8)
+    doc.setTextColor(200, 220, 255)
+    doc.text(new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' }), pageW - 14, 10, { align: 'right' })
+    doc.text(`Currency: ${displayCurrency}  |  Supplier: ${supplierCurrency}${supplierCurrency !== displayCurrency ? `  |  1 ${supplierCurrency} = ${supConvRate.toFixed(4)} ${displayCurrency}` : ''}`, pageW - 14, 17, { align: 'right' })
+    doc.text(`Qty: ${n(quantity).toLocaleString()} units  |  Margin: ${n(margin)}%`, pageW - 14, 24, { align: 'right' })
+    y = 38
 
-    const section = (title) => {
+    // Key numbers box
+    const boxH = 24
+    doc.setFillColor(...lightBlue)
+    doc.roundedRect(14, y, pageW - 28, boxH, 2, 2, 'F')
+    doc.setDrawColor(...blue)
+    doc.setLineWidth(0.4)
+    doc.roundedRect(14, y, pageW - 28, boxH, 2, 2, 'S')
+    const kpis = [
+      ['LANDED / UNIT', fmt(calc.landedPerUnit)],
+      ['SELL PRICE',    fmt(calc.sellingPrice)],
+      ['TOTAL PROFIT',  fmt(calc.totalProfit)],
+      ['ROI',           pct(calc.roi)],
+    ]
+    const colW = (pageW - 28) / 4
+    kpis.forEach(([label, val], i) => {
+      const x = 14 + i * colW + colW / 2
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(...muted)
+      doc.text(label, x, y + 8, { align: 'center' })
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(11)
+      doc.setFontSize(12)
       doc.setTextColor(...blue)
-      doc.text(title, 14, y)
-      doc.setDrawColor(...blue)
-      doc.setLineWidth(0.4)
-      doc.line(14, y + 1.5, pageW - 14, y + 1.5)
-      y += 7
+      doc.text(val, x, y + 18, { align: 'center' })
+    })
+    y += boxH + 8
+
+    // Row helpers
+    const addSection = (title) => {
+      if (y > 265) { doc.addPage(); y = 15 }
+      y += 2
+      doc.setFillColor(219, 234, 254)
+      doc.rect(14, y - 1, pageW - 28, 8, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8.5)
+      doc.setTextColor(...blue)
+      doc.text(title, 18, y + 4.5)
+      y += 10
+    }
+    const addRow = (label, value, highlight = false) => {
+      if (y > 272) { doc.addPage(); y = 15 }
+      if (highlight) {
+        doc.setFillColor(239, 246, 255)
+        doc.rect(14, y - 2, pageW - 28, 7.5, 'F')
+      }
+      doc.setFont('helvetica', highlight ? 'bold' : 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(...(highlight ? blue : darkText))
+      doc.text(label, 18, y + 3)
+      doc.setFont('helvetica', 'bold')
+      doc.text(value, pageW - 18, y + 3, { align: 'right' })
+      doc.setDrawColor(220, 226, 240)
+      doc.setLineWidth(0.15)
+      doc.line(14, y + 5.5, pageW - 14, y + 5.5)
+      y += 8
     }
 
-    const row2col = (data) => {
-      autoTable(doc, {
-        startY: y,
-        margin: { left: 14, right: 14 },
-        head: [],
-        body: data,
-        styles: { fontSize: 9, cellPadding: 2.5, textColor: darkText, lineColor: [209, 217, 240], lineWidth: 0.2 },
-        columnStyles: {
-          0: { fontStyle: 'normal', textColor: muted, cellWidth: 90 },
-          1: { fontStyle: 'bold', halign: 'right' },
-        },
-        theme: 'grid',
-        alternateRowStyles: { fillColor: lightBlue },
-        didParseCell: (data) => {
-          if (data.row.index === data.table.body.length - 1 && data.row.raw?.[2] === 'highlight') {
-            data.cell.styles.fillColor = [219, 234, 254]
-            data.cell.styles.fontStyle = 'bold'
-            data.cell.styles.textColor = blue
-          }
-        },
-      })
-      y = doc.lastAutoTable.finalY + 6
-    }
-
-    // ── Section 1 ──
-    section('1a. Cost of Goods (Real)')
-    row2col([
-      [`Supplier price per unit (${supplierCurrency})`, supSym + n(supplierPrice).toFixed(2)],
-      supplierCurrency !== displayCurrency ? [`Exchange rate (${supplierCurrency} to ${displayCurrency})`, supConvRate.toFixed(4)] : null,
-      ['Quantity', `${n(quantity).toLocaleString()} units`],
-      ['Total supplier cost (Real)', fmt(calc.totalSupplierCostReal), 'highlight'],
-    ].filter(Boolean))
-
+    // Section 1
+    addSection('COST OF GOODS')
+    addRow(`Supplier price / unit (${supplierCurrency})`, supSym + n(supplierPrice).toFixed(2))
+    if (supplierCurrency !== displayCurrency) addRow(`Exchange rate (1 ${supplierCurrency})`, `= ${supConvRate.toFixed(4)} ${displayCurrency}`)
+    addRow('Quantity', `${n(quantity).toLocaleString()} units`)
+    addRow('Total supplier cost', fmt(calc.totalSupplierCostReal), true)
     if (n(expensesPct) > 0) {
-      section('1b. Assumption - With Expenses %')
-      row2col([
-        ['Expenses % added', `${n(expensesPct)}%`],
-        ['Total supplier cost (Assumption)', fmt(calc.totalSupplierCostAssumed), 'highlight'],
-        ['Extra cost added', fmt(calc.totalSupplierCostAssumed - calc.totalSupplierCostReal)],
-        ['A) Real landed/unit', fmt(calc.landedPerUnitReal)],
-        ['B) Assumed landed/unit', fmt(calc.landedPerUnitAssumed), 'highlight'],
-        ['Currently using in calc', 'A) Real (sections 2+ always use real supplier cost)'],
-      ])
+      addRow(`Assumed cost (+${n(expensesPct)}% expenses)`, fmt(calc.totalSupplierCostAssumed))
     }
 
-    // ── Section 2 ──
-    section('2. Shipping & Freight')
-    row2col([
-      ['Box dimensions (L × W × H)', `${n(boxLength)} × ${n(boxWidth)} × ${n(boxHeight)} cm`],
-      ['Units per box', n(unitsPerBox).toLocaleString()],
-      ['Total boxes', plain(calc.totalBoxes)],
-      ['CBM per box', `${plain(calc.cbmPerBox)} CBM`],
-      ['Total CBM', `${plain(calc.totalCbm)} CBM`],
-      ['Rate per CBM (USD)', `$${(n(cbmRate) || 290).toFixed(2)}`],
-      [`Freight cost (converted to ${displayCurrency})`, fmt(calc.freightCost), 'highlight'],
-    ])
+    // Section 2
+    addSection('SHIPPING & FREIGHT')
+    addRow('Box dimensions (L × W × H)', `${n(boxLength)} × ${n(boxWidth)} × ${n(boxHeight)} cm`)
+    addRow('Units per box', plain(n(unitsPerBox)))
+    addRow('Total boxes', plain(calc.totalBoxes))
+    addRow('Total CBM', `${plain(calc.totalCbm)} CBM`)
+    addRow('Rate per CBM (always USD)', `$${(n(cbmRate) || 290).toFixed(2)}`)
+    addRow('Freight cost', fmt(calc.freightCost), true)
 
-    // ── Section 3 ──
-    section('3. Import Costs')
-    row2col([
-      ['Freight', fmt(calc.freightCost)],
-      [`Customs duty (${n(customsDutyPct)}%)`, fmt(calc.customsDuty)],
-      ['Agent fee', fmt(n(agentFee))],
-      ['Harbour / port charges', fmt(n(harbourCharges))],
-      ['Currency buffer (7%)', fmt(calc.currencyBuffer)],
-      ['Damage buffer (3%)', fmt(calc.damageBuffer)],
-      ['Total import costs', fmt(calc.totalImportCosts), 'highlight'],
-    ])
+    // Section 3
+    addSection('IMPORT COSTS')
+    if (n(customsDutyPct)) addRow(`Customs duty (${n(customsDutyPct)}% of supplier cost)`, fmt(calc.customsDuty))
+    if (n(agentFee))       addRow('Agent fee', fmt(n(agentFee)))
+    if (n(harbourCharges)) addRow('Harbour / port charges', fmt(n(harbourCharges)))
+    addRow('Currency buffer (7%)', fmt(calc.currencyBuffer))
+    addRow('Damage buffer (3%)', fmt(calc.damageBuffer))
+    addRow('Total import costs', fmt(calc.totalImportCosts), true)
 
-    // ── Section 4 ──
-    const miscRows = [
-      n(fumigation) && ['Fumigation', fmt(n(fumigation))],
-      n(localTransport) && ['Local transport', fmt(n(localTransport))],
-      n(storage) && ['Storage / warehousing', fmt(n(storage))],
-      n(packaging) && ['Packaging / labelling', fmt(n(packaging))],
-      n(phoneAdmin) && ['Phone calls / admin', fmt(n(phoneAdmin))],
-      (other1Label || n(other1Amount)) && [other1Label || 'Other 1', fmt(n(other1Amount))],
-      (other2Label || n(other2Amount)) && [other2Label || 'Other 2', fmt(n(other2Amount))],
-      ['Total misc costs', fmt(calc.totalMisc), 'highlight'],
-    ].filter(Boolean)
-    if (miscRows.length) {
-      section('4. Miscellaneous Costs')
-      row2col(miscRows)
+    // Section 4 misc
+    const hasMisc = [fumigation, localTransport, storage, packaging, phoneAdmin, other1Amount, other2Amount].some(v => n(v) > 0)
+    if (hasMisc) {
+      addSection('MISCELLANEOUS COSTS')
+      if (n(fumigation))     addRow('Fumigation', fmt(n(fumigation)))
+      if (n(localTransport)) addRow('Local transport', fmt(n(localTransport)))
+      if (n(storage))        addRow('Storage / warehousing', fmt(n(storage)))
+      if (n(packaging))      addRow('Packaging / labelling', fmt(n(packaging)))
+      if (n(phoneAdmin))     addRow('Phone calls / admin', fmt(n(phoneAdmin)))
+      if (n(other1Amount))   addRow(other1Label || 'Other 1', fmt(n(other1Amount)))
+      if (n(other2Amount))   addRow(other2Label || 'Other 2', fmt(n(other2Amount)))
+      addRow('Total misc costs', fmt(calc.totalMisc), true)
     }
 
-    // ── Section 5 ──
-    if (y > 230) { doc.addPage(); y = 15 }
-    section('5. Landed Cost')
-    row2col([
-      ['Total supplier cost (Real)', fmt(calc.totalSupplierCostReal)],
-      ['Total import costs', fmt(calc.totalImportCosts)],
-      ['Total misc costs', fmt(calc.totalMisc)],
-      ['TOTAL LANDED COST', fmt(calc.totalLanded), 'highlight'],
-      ['Landed cost per unit', fmt(calc.landedPerUnit), 'highlight'],
-    ])
+    // Section 5
+    addSection('LANDED COST')
+    addRow('Supplier cost', fmt(calc.totalSupplierCostReal))
+    addRow('Import costs', fmt(calc.totalImportCosts))
+    if (hasMisc) addRow('Misc costs', fmt(calc.totalMisc))
+    addRow('Total landed cost', fmt(calc.totalLanded), true)
+    addRow('Landed cost per unit', fmt(calc.landedPerUnit), true)
 
-    // ── Section 6 ──
-    section('6. Selling Price & Profit')
-    row2col([
-      ['Target margin', `${n(margin)}%`],
-      ['Selling price per unit', fmt(calc.sellingPrice), 'highlight'],
-      ['Profit per unit', fmt(calc.profitPerUnit)],
-      [`Total profit (${n(quantity).toLocaleString()} units)`, fmt(calc.totalProfit), 'highlight'],
-      ['ROI', pct(calc.roi), 'highlight'],
-    ])
+    // Section 6
+    addSection('SELLING PRICE & PROFIT')
+    addRow('Target margin', `${n(margin)}%`)
+    addRow('Selling price per unit', fmt(calc.sellingPrice), true)
+    addRow('Profit per unit', fmt(calc.profitPerUnit))
+    addRow(`Total profit (${n(quantity).toLocaleString()} units)`, fmt(calc.totalProfit), true)
+    addRow('ROI  (Total profit ÷ Total landed cost)', pct(calc.roi), true)
 
-    // ── Section 7 ──
-    const checkRows = [
-      grade && ['Product grade', `Grade ${grade}`],
-      sampleTested && ['Sample tested', sampleTested === 'yes' ? 'Yes' : 'No'],
-      n(competitorPrice) && ['Competitor price', fmt(n(competitorPrice))],
-      itemSpeed && ['Item speed', itemSpeed === 'fast' ? 'Fast-moving' : 'Slow-moving'],
-      isSeasonal && ['Seasonal', isSeasonal === 'yes' ? `Yes - ${season}` : 'No'],
-      n(moq) && ['MOQ', `${n(moq).toLocaleString()} units`],
-      ratesUpdated && [`Exchange rates as of`, ratesUpdated],
-    ].filter(Boolean)
-    if (checkRows.length) {
-      if (y > 220) { doc.addPage(); y = 15 }
-      section('7. Product Check')
-      row2col(checkRows)
-    }
-
-    // ── Log table ──
-    if (log.length > 0) {
-      if (y > 200) { doc.addPage(); y = 15 }
-      section('9. Running Calculations Log')
-      autoTable(doc, {
-        startY: y,
-        margin: { left: 14, right: 14 },
-        head: [['Date', 'Product', 'Qty', 'Landed/Unit', 'Sell Price', 'Margin']],
-        body: log.map((r) => [
-          r.date, r.product, r.qty.toLocaleString(),
-          fmt(r.landedPerUnit), fmt(r.sellingPrice), `${r.margin}%`,
-        ]),
-        headStyles: { fillColor: blue, textColor: 255, fontStyle: 'bold', fontSize: 9 },
-        styles: { fontSize: 9, cellPadding: 2.5, textColor: darkText },
-        alternateRowStyles: { fillColor: lightBlue },
-        theme: 'grid',
-      })
-      y = doc.lastAutoTable.finalY + 6
-    }
-
-    // ── Footer on every page ──
+    // Footer
     const pageCount = doc.internal.getNumberOfPages()
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i)
-      doc.setFontSize(8)
+      doc.setFontSize(7.5)
       doc.setTextColor(...muted)
-      doc.text(`Page ${i} of ${pageCount}`, pageW / 2, 292, { align: 'center' })
+      doc.text(`Import Calculator  |  ${productName || 'Unnamed Product'}  |  Page ${i} of ${pageCount}`, pageW / 2, 292, { align: 'center' })
     }
+    return doc
+  }
 
-    doc.save(`import-calculation-${new Date().toISOString().slice(0, 10)}.pdf`)
+  const downloadPDF = () => {
+    const doc = buildPDF()
+    const safeName = (productName || 'calculation').toLowerCase().replace(/\s+/g, '-')
+    doc.save(`${safeName}-${new Date().toISOString().slice(0, 10)}.pdf`)
+  }
+
+  const downloadLogPDF = (entry) => {
+    if (!entry.pdfData) return
+    const link = document.createElement('a')
+    link.href = entry.pdfData
+    const safeName = entry.product.toLowerCase().replace(/\s+/g, '-')
+    link.download = `${safeName}-${entry.date.replace(/\//g, '-')}.pdf`
+    link.click()
   }
 
   const addToLog = () => {
-    if (!logProduct) return
+    const name = productName.trim() || logProduct.trim()
+    if (!name || calc.landedPerUnit === 0) return
+    const doc = buildPDF()
+    const pdfData = doc.output('datauristring')
     const entry = {
       date: new Date().toLocaleDateString('en-AU'),
-      product: logProduct,
+      product: name,
       qty: n(quantity),
       landedPerUnit: calc.landedPerUnit,
       sellingPrice: calc.sellingPrice,
       margin: n(margin),
-      notes: '',
+      totalProfit: calc.totalProfit,
+      roi: calc.roi,
+      pdfData,
     }
     setLog((prev) => [entry, ...prev])
     setLogProduct('')
@@ -560,6 +547,18 @@ export default function App() {
             </div>
           )}
         </section>
+        {/* Product Name */}
+        <div className="product-name-bar">
+          <label className="product-name-label">Product Name</label>
+          <input
+            type="text"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            placeholder="e.g. Stainless Steel Water Bottle"
+            className="product-name-input"
+          />
+        </div>
+
         {/* Section 1a: Real Data */}
         <SectionCard number="1a" title="Cost of Goods (Real)">
           <div className="field-grid">
@@ -919,22 +918,23 @@ export default function App() {
 
         {/* ── Section 9 ── */}
         <SectionCard number="9" title="Running Calculations Log">
-          <p className="section-note">Record each product you calculate to compare over time.</p>
+          <p className="section-note">Save each product calculation — a PDF is stored with each entry so you can re-download it any time.</p>
           <div className="log-add">
             <input
               type="text"
-              value={logProduct}
+              value={productName.trim() ? '' : logProduct}
               onChange={(e) => setLogProduct(e.target.value)}
-              placeholder="Product name"
+              placeholder={productName.trim() ? `Saving as: "${productName}"` : 'Product name (or set it at the top)'}
               className="text-input"
+              disabled={!!productName.trim()}
               onKeyDown={(e) => e.key === 'Enter' && addToLog()}
             />
             <button
               className="btn-add"
               onClick={addToLog}
-              disabled={!logProduct || calc.landedPerUnit === 0}
+              disabled={(!productName.trim() && !logProduct.trim()) || calc.landedPerUnit === 0}
             >
-              Save current calc →
+              Save + store PDF →
             </button>
           </div>
           {log.length === 0 ? (
@@ -950,6 +950,8 @@ export default function App() {
                     <th>Landed/unit</th>
                     <th>Sell price</th>
                     <th>Margin</th>
+                    <th>ROI</th>
+                    <th>PDF</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -962,6 +964,12 @@ export default function App() {
                       <td>{fmt(row.landedPerUnit)}</td>
                       <td>{fmt(row.sellingPrice)}</td>
                       <td>{row.margin}%</td>
+                      <td>{row.roi != null ? pct(row.roi) : '-'}</td>
+                      <td>
+                        {row.pdfData
+                          ? <button className="btn-dl-pdf" onClick={() => downloadLogPDF(row)} title="Download PDF">⬇ PDF</button>
+                          : <span className="no-pdf">-</span>}
+                      </td>
                       <td>
                         <button className="btn-delete" onClick={() => deleteLogEntry(i)}>✕</button>
                       </td>

@@ -552,6 +552,42 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   word-break: break-word;
 }
 
+/* ── Product name bar ── */
+.product-name-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.85rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.10);
+}
+
+.product-name-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.product-name-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+}
+
+.product-name-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
 /* ── Log section ── */
 .log-add {
   display: flex;
@@ -563,6 +599,31 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .log-add .text-input {
   flex: 1;
   min-width: 160px;
+}
+
+.log-add .text-input:disabled {
+  background: var(--bg);
+  color: var(--accent);
+  font-weight: 600;
+  cursor: default;
+}
+
+.btn-dl-pdf {
+  padding: 0.25rem 0.6rem;
+  background: #eff6ff;
+  color: var(--accent);
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-dl-pdf:hover { background: #dbeafe; }
+
+.no-pdf {
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
 .btn-add {
