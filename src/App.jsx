@@ -115,6 +115,12 @@ export default function App() {
     return rates[displayCurrency] / rates[supplierCurrency]
   }, [rates, displayCurrency, supplierCurrency])
 
+  // Conversion: USD -> display currency (cbmRate is always entered in USD)
+  const usdToDisplayRate = useMemo(() => {
+    if (!rates[displayCurrency]) return 1
+    return rates[displayCurrency] // API base is USD so rates[X] = X per 1 USD
+  }, [rates, displayCurrency])
+
   const sym = CURRENCIES[displayCurrency]?.symbol || displayCurrency + ' '
   const supSym = CURRENCIES[supplierCurrency]?.symbol || supplierCurrency + ' '
   const fmt = useMemo(() => makeFmt(sym), [sym])
@@ -191,7 +197,7 @@ export default function App() {
     const totalBoxes = upb > 0 ? qty / upb : 0
     const cbmPerBox = (L * W * H) / 1_000_000
     const totalCbm = cbmPerBox * totalBoxes
-    const freightCost = totalCbm * rate
+    const freightCost = totalCbm * rate * usdToDisplayRate // rate is always USD
 
     const customsDuty = totalSupplierCost * (n(customsDutyPct) / 100)
     const currencyBuffer = totalSupplierCost * 0.07
@@ -228,7 +234,7 @@ export default function App() {
     supplierPrice, quantity, boxLength, boxWidth, boxHeight, unitsPerBox, cbmRate,
     customsDutyPct, agentFee, harbourCharges, fumigation, localTransport, storage,
     packaging, phoneAdmin, other1Amount, other2Amount, margin, supConvRate,
-    expensesPct, activeScenario,
+    expensesPct, activeScenario, usdToDisplayRate,
   ])
 
   const downloadPDF = () => {
@@ -317,8 +323,8 @@ export default function App() {
       ['Total boxes', plain(calc.totalBoxes)],
       ['CBM per box', `${plain(calc.cbmPerBox)} CBM`],
       ['Total CBM', `${plain(calc.totalCbm)} CBM`],
-      ['Rate per CBM', fmt(n(cbmRate) || 290)],
-      ['Freight cost', fmt(calc.freightCost), 'highlight'],
+      ['Rate per CBM (USD)', `$${(n(cbmRate) || 290).toFixed(2)}`],
+      [`Freight cost (converted to ${displayCurrency})`, fmt(calc.freightCost), 'highlight'],
     ])
 
     // ── Section 3 ──
@@ -660,15 +666,18 @@ export default function App() {
             <Field label="Units per box">
               <NumInput value={unitsPerBox} onChange={setUnitsPerBox} suffix="units" />
             </Field>
-            <Field label="Rate per CBM" hint={`default ${sym}290`}>
-              <NumInput value={cbmRate} onChange={setCbmRate} prefix={sym} />
+            <Field label="Rate per CBM" hint="always USD (default $290)">
+              <NumInput value={cbmRate} onChange={setCbmRate} prefix="$" />
             </Field>
           </div>
           <div className="calc-block">
             <Calc label="Total boxes" value={`${plain(calc.totalBoxes)} boxes`} />
             <Calc label="CBM per box" value={`${plain(calc.cbmPerBox)} CBM`} />
             <Calc label="Total CBM" value={`${plain(calc.totalCbm)} CBM`} />
-            <Calc label="Freight cost" value={fmt(calc.freightCost)} highlight />
+            {displayCurrency !== 'USD' && (
+              <Calc label={`USD rate used (1 USD = ${fmt(usdToDisplayRate)} ${displayCurrency})`} value={`$${(n(cbmRate)||290).toFixed(2)}/CBM`} />
+            )}
+            <Calc label={`Freight cost${displayCurrency !== 'USD' ? ` (converted to ${displayCurrency})` : ''}`} value={fmt(calc.freightCost)} highlight />
           </div>
         </SectionCard>
 
