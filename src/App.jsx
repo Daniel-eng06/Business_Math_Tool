@@ -444,9 +444,12 @@ export default function App() {
       {/* ── Header ── */}
       <header className="app-header">
         <div className="header-inner">
-          <div>
-            <h1>Import Calculator</h1>
-            <p>Fill in each section from top to bottom. Results calculate automatically.</p>
+          <div className="header-brand">
+            <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="Import Calculator Logo" className="header-logo" />
+            <div>
+              <h1>Import Calculator</h1>
+              <p>Fill in each section from top to bottom. Results calculate automatically.</p>
+            </div>
           </div>
           <div className="header-right">
             {calc.landedPerUnit > 0 && (
