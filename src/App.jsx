@@ -9,7 +9,7 @@ const CURRENCIES = {
   AUD: { symbol: 'A$',   name: 'Australian Dollar',    flag: '🇦🇺' },
   GBP: { symbol: '£',    name: 'British Pound',        flag: '🇬🇧' },
   AED: { symbol: 'AED ', name: 'UAE Dirham',           flag: '🇦🇪' },
-  GHS: { symbol: 'GH₵',  name: 'Ghana Cedi',           flag: '🇬🇭' },
+  GHS: { symbol: 'GHS',   name: 'Ghana Cedi',           flag: '🇬🇭' },
 }
 
 // --- Helpers ---
