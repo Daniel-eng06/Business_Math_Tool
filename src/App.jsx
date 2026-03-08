@@ -131,7 +131,6 @@ export default function App() {
 
   // -- Section 1b - Assumption --
   const [expensesPct, setExpensesPct] = useState('')
-  const [activeScenario, setActiveScenario] = useState('real') // 'real' | 'assumption'
 
   // ── Section 2 ──
   const [boxLength, setBoxLength] = useState('')
@@ -185,9 +184,7 @@ export default function App() {
   const calc = useMemo(() => {
     const supPriceRaw = n(supplierPrice) * supConvRate
     const supPriceAssumed = supPriceRaw * (1 + n(expensesPct) / 100)
-    const supPrice = activeScenario === 'assumption' ? supPriceAssumed : supPriceRaw
     const qty = n(quantity)
-    const totalSupplierCost = supPrice * qty
     const totalSupplierCostReal = supPriceRaw * qty
     const totalSupplierCostAssumed = supPriceAssumed * qty
 
@@ -199,9 +196,10 @@ export default function App() {
     const totalCbm = cbmPerBox * totalBoxes
     const freightCost = totalCbm * rate * usdToDisplayRate // rate is always USD
 
-    const customsDuty = totalSupplierCost * (n(customsDutyPct) / 100)
-    const currencyBuffer = totalSupplierCost * 0.07
-    const damageBuffer = totalSupplierCost * 0.03
+    // Sections 2+ always use REAL supplier cost as base
+    const customsDuty = totalSupplierCostReal * (n(customsDutyPct) / 100)
+    const currencyBuffer = totalSupplierCostReal * 0.07
+    const damageBuffer = totalSupplierCostReal * 0.03
     const agentFeeN = n(agentFee)
     const harbourN = n(harbourCharges)
     const totalImportCosts = freightCost + customsDuty + agentFeeN + harbourN + currencyBuffer + damageBuffer
@@ -209,7 +207,8 @@ export default function App() {
     const miscItems = [n(fumigation), n(localTransport), n(storage), n(packaging), n(phoneAdmin), n(other1Amount), n(other2Amount)]
     const totalMisc = miscItems.reduce((a, b) => a + b, 0)
 
-    const totalLanded = totalSupplierCost + totalImportCosts + totalMisc
+    // A) Real: all sections feed here
+    const totalLanded = totalSupplierCostReal + totalImportCosts + totalMisc
     const landedPerUnit = qty > 0 ? totalLanded / qty : 0
 
     const mg = n(margin) / 100
@@ -219,22 +218,19 @@ export default function App() {
     const roi = totalLanded > 0 ? (totalProfit / totalLanded) * 100 : 0
 
     return {
-      totalSupplierCost, totalBoxes, cbmPerBox, totalCbm, freightCost,
+      totalSupplierCostReal, totalSupplierCostAssumed, totalBoxes, cbmPerBox, totalCbm, freightCost,
       customsDuty, currencyBuffer, damageBuffer, totalImportCosts,
       totalMisc, totalLanded, landedPerUnit,
       sellingPrice, profitPerUnit, totalProfit, roi,
-      // Comparison data (always both)
-      totalSupplierCostReal, totalSupplierCostAssumed,
-      landedReal: (totalSupplierCostReal + totalImportCosts + totalMisc),
-      landedAssumed: (totalSupplierCostAssumed + totalImportCosts + totalMisc),
-      landedPerUnitReal: qty > 0 ? (totalSupplierCostReal + totalImportCosts + totalMisc) / qty : 0,
+      // B) Assumption: only supplier cost differs, rest same as A)
+      landedPerUnitReal: landedPerUnit,
       landedPerUnitAssumed: qty > 0 ? (totalSupplierCostAssumed + totalImportCosts + totalMisc) / qty : 0,
     }
   }, [
     supplierPrice, quantity, boxLength, boxWidth, boxHeight, unitsPerBox, cbmRate,
     customsDutyPct, agentFee, harbourCharges, fumigation, localTransport, storage,
     packaging, phoneAdmin, other1Amount, other2Amount, margin, supConvRate,
-    expensesPct, activeScenario, usdToDisplayRate,
+    expensesPct, usdToDisplayRate,
   ])
 
   const downloadPDF = () => {
@@ -311,7 +307,7 @@ export default function App() {
         ['Extra cost added', fmt(calc.totalSupplierCostAssumed - calc.totalSupplierCostReal)],
         ['A) Real landed/unit', fmt(calc.landedPerUnitReal)],
         ['B) Assumed landed/unit', fmt(calc.landedPerUnitAssumed), 'highlight'],
-        ['Currently using in calc', activeScenario === 'real' ? 'A) Real' : 'B) Assumption'],
+        ['Currently using in calc', 'A) Real (sections 2+ always use real supplier cost)'],
       ])
     }
 
@@ -359,7 +355,7 @@ export default function App() {
     if (y > 230) { doc.addPage(); y = 15 }
     section('5. Landed Cost')
     row2col([
-      ['Total supplier cost', fmt(calc.totalSupplierCost)],
+      ['Total supplier cost (Real)', fmt(calc.totalSupplierCostReal)],
       ['Total import costs', fmt(calc.totalImportCosts)],
       ['Total misc costs', fmt(calc.totalMisc)],
       ['TOTAL LANDED COST', fmt(calc.totalLanded), 'highlight'],
@@ -593,23 +589,6 @@ export default function App() {
               <label>Expenses % on supplier cost</label>
               <NumInput value={expensesPct} onChange={setExpensesPct} suffix="%" placeholder="e.g. 10" />
             </div>
-            <div className="field">
-              <label>Feed into main calculation</label>
-              <div className="scenario-toggle">
-                <button
-                  className={`toggle-btn${activeScenario === 'real' ? ' active' : ''}`}
-                  onClick={() => setActiveScenario('real')}
-                >
-                  A) Real
-                </button>
-                <button
-                  className={`toggle-btn assumption${activeScenario === 'assumption' ? ' active' : ''}`}
-                  onClick={() => setActiveScenario('assumption')}
-                >
-                  B) Assumption
-                </button>
-              </div>
-            </div>
           </div>
           <div className="assumption-compare">
             <div className="asmp-col">
@@ -645,7 +624,7 @@ export default function App() {
             </div>
           )}
           <div className="active-scenario-note">
-            Sections 2-8 are currently using: <strong>{activeScenario === 'real' ? 'A) Real supplier cost' : `B) Assumption (+${n(expensesPct)}% expenses)`}</strong>
+            Sections 2-8 always use <strong>A) Real supplier cost</strong>. B) Assumption is shown in the header for comparison only.
           </div>
         </SectionCard>
 
@@ -766,7 +745,7 @@ export default function App() {
         {/* ── Section 5 ── */}
         <SectionCard number="5" title="Landed Cost (Full Cost Before Profit)">
           <div className="calc-block">
-            <Calc label="Total supplier cost" value={fmt(calc.totalSupplierCost)} />
+            <Calc label="Total supplier cost (Real)" value={fmt(calc.totalSupplierCostReal)} />
             <Calc label="Total import costs" value={fmt(calc.totalImportCosts)} />
             <Calc label="Total misc costs" value={fmt(calc.totalMisc)} />
             <div className="calc-divider" />
