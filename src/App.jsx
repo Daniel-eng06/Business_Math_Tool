@@ -215,16 +215,29 @@ export default function App() {
     const sellingPrice = mg < 1 && landedPerUnit > 0 ? landedPerUnit / (1 - mg) : 0
     const profitPerUnit = sellingPrice - landedPerUnit
     const totalProfit = profitPerUnit * qty
+    const totalRevenue = sellingPrice * qty
     const roi = totalLanded > 0 ? (totalProfit / totalLanded) * 100 : 0
+
+    // ── 35% customs duty scenario ──
+    const customsDutyAt35 = totalSupplierCostReal * 0.35
+    const totalImportCostsWith35 = freightCost + customsDutyAt35 + agentFeeN + harbourN + currencyBuffer + damageBuffer
+    const totalLandedWith35 = totalSupplierCostReal + totalImportCostsWith35 + totalMisc
+    const landedPerUnitWith35 = qty > 0 ? totalLandedWith35 / qty : 0
 
     return {
       totalSupplierCostReal, totalSupplierCostAssumed, totalBoxes, cbmPerBox, totalCbm, freightCost,
       customsDuty, currencyBuffer, damageBuffer, totalImportCosts,
       totalMisc, totalLanded, landedPerUnit,
-      sellingPrice, profitPerUnit, totalProfit, roi,
+      sellingPrice, profitPerUnit, totalProfit, totalRevenue, roi,
       // B) Assumption: only supplier cost differs, rest same as A)
       landedPerUnitReal: landedPerUnit,
       landedPerUnitAssumed: qty > 0 ? (totalSupplierCostAssumed + totalImportCosts + totalMisc) / qty : 0,
+      // 35% customs scenario
+      customsDutyAt35, totalImportCostsWith35, totalLandedWith35, landedPerUnitWith35,
+      // per box
+      landedPerBox: upb > 0 ? landedPerUnit * upb : 0,
+      landedPerBoxWith35: upb > 0 ? landedPerUnitWith35 * upb : 0,
+      unitsPerBoxN: upb,
     }
   }, [
     supplierPrice, quantity, boxLength, boxWidth, boxHeight, unitsPerBox, cbmRate,
@@ -337,6 +350,18 @@ export default function App() {
     addRow('Rate per CBM (always USD)', `$${(n(cbmRate) || 290).toFixed(2)}`)
     addRow('Freight cost', fmt(calc.freightCost), true)
 
+    const addEstimateSection = (title) => {
+      if (y > 265) { doc.addPage(); y = 15 }
+      y += 2
+      doc.setFillColor(219, 234, 254)
+      doc.rect(14, y - 1, pageW - 28, 8, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8.5)
+      doc.setTextColor(29, 78, 216)
+      doc.text(`  ▸ ESTIMATE: ${title}`, 18, y + 4.5)
+      y += 10
+    }
+
     // Section 3
     addSection('IMPORT COSTS')
     if (n(customsDutyPct)) addRow(`Customs duty (${n(customsDutyPct)}% of supplier cost)`, fmt(calc.customsDuty))
@@ -345,6 +370,16 @@ export default function App() {
     addRow('Currency buffer (7%)', fmt(calc.currencyBuffer))
     addRow('Damage buffer (3%)', fmt(calc.damageBuffer))
     addRow('Total import costs', fmt(calc.totalImportCosts), true)
+
+    // Section 3 — 35% estimate
+    addEstimateSection('IMPORT COSTS AT 35% CUSTOMS DUTY')
+    addRow('Freight', fmt(calc.freightCost))
+    addRow('Customs duty at 35% of supplier cost', fmt(calc.customsDutyAt35))
+    if (n(agentFee))       addRow('Agent fee', fmt(n(agentFee)))
+    if (n(harbourCharges)) addRow('Harbour / port charges', fmt(n(harbourCharges)))
+    addRow('Currency buffer (7%)', fmt(calc.currencyBuffer))
+    addRow('Damage buffer (3%)', fmt(calc.damageBuffer))
+    addRow('Estimated total import costs (at 35% customs)', fmt(calc.totalImportCostsWith35), true)
 
     // Section 4 misc
     const hasMisc = [fumigation, localTransport, storage, packaging, phoneAdmin, other1Amount, other2Amount].some(v => n(v) > 0)
@@ -367,11 +402,22 @@ export default function App() {
     if (hasMisc) addRow('Misc costs', fmt(calc.totalMisc))
     addRow('Total landed cost', fmt(calc.totalLanded), true)
     addRow('Landed cost per unit', fmt(calc.landedPerUnit), true)
+    if (calc.unitsPerBoxN > 0) addRow(`Landed cost per box (${calc.unitsPerBoxN} units/box)`, fmt(calc.landedPerBox), true)
+
+    // Section 5 — 35% estimate
+    addEstimateSection('LANDED COST AT 35% CUSTOMS DUTY')
+    addRow('Supplier cost', fmt(calc.totalSupplierCostReal))
+    addRow('Import costs (at 35% customs)', fmt(calc.totalImportCostsWith35))
+    if (hasMisc) addRow('Misc costs', fmt(calc.totalMisc))
+    addRow('Total landed cost (at 35% customs)', fmt(calc.totalLandedWith35), true)
+    addRow('Landed cost per unit (at 35% customs)', fmt(calc.landedPerUnitWith35), true)
+    if (calc.unitsPerBoxN > 0) addRow(`Landed cost per box at 35% (${calc.unitsPerBoxN} units/box)`, fmt(calc.landedPerBoxWith35), true)
 
     // Section 6
     addSection('SELLING PRICE & PROFIT')
     addRow('Target margin', `${n(margin)}%`)
     addRow('Selling price per unit', fmt(calc.sellingPrice), true)
+    if (calc.unitsPerBoxN > 0) addRow(`Selling price per box (${calc.unitsPerBoxN} units/box)`, fmt(calc.sellingPrice * calc.unitsPerBoxN), true)
     addRow('Profit per unit', fmt(calc.profitPerUnit))
     addRow(`Total profit (${n(quantity).toLocaleString()} units)`, fmt(calc.totalProfit), true)
     addRow('ROI  (Total profit ÷ Total landed cost)', pct(calc.roi), true)
@@ -451,6 +497,12 @@ export default function App() {
                     <span>Sell price</span>
                     <strong>{fmt(n(expensesPct) > 0 ? calc.landedPerUnitReal / (1 - n(margin)/100) : calc.sellingPrice)}</strong>
                   </div>
+                  {calc.unitsPerBoxN > 0 && (
+                    <div className="hs-item">
+                      <span>Sell price/box</span>
+                      <strong>{fmt((n(expensesPct) > 0 ? calc.landedPerUnitReal / (1 - n(margin)/100) : calc.sellingPrice) * calc.unitsPerBoxN)}</strong>
+                    </div>
+                  )}
                 </div>
                 {n(expensesPct) > 0 && (
                   <div className="hs-scenario hs-scenario-assumed">
@@ -463,9 +515,19 @@ export default function App() {
                       <span>Sell price</span>
                       <strong className="assumed-num">{fmt(calc.landedPerUnitAssumed / (1 - n(margin)/100))}</strong>
                     </div>
+                    {calc.unitsPerBoxN > 0 && (
+                      <div className="hs-item">
+                        <span>Sell price/box</span>
+                        <strong className="assumed-num">{fmt((calc.landedPerUnitAssumed / (1 - n(margin)/100)) * calc.unitsPerBoxN)}</strong>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="hs-divider" />
+                <div className="hs-item hs-big">
+                  <span>Total revenue</span>
+                  <strong className="pos-rev">{fmt(calc.totalRevenue)}</strong>
+                </div>
                 <div className="hs-item hs-big">
                   <span>Total profit</span>
                   <strong className={calc.totalProfit >= 0 ? 'pos' : 'neg'}>{fmt(calc.totalProfit)}</strong>
@@ -685,6 +747,20 @@ export default function App() {
             <Calc label="Damage buffer (3% - damaged goods protection)" value={fmt(calc.damageBuffer)} />
             <Calc label="Total import costs" value={fmt(calc.totalImportCosts)} highlight />
           </div>
+          {calc.totalSupplierCostReal > 0 && (
+            <div className="scenario-35">
+              <div className="scenario-35-header">Estimated shipping cost at 35% customs duty</div>
+              <div className="calc-block">
+                <Calc label="Freight" value={fmt(calc.freightCost)} />
+                <Calc label="Customs duty at 35% of supplier cost" value={fmt(calc.customsDutyAt35)} />
+                <Calc label="Agent fee" value={fmt(n(agentFee))} />
+                <Calc label="Harbour / port charges" value={fmt(n(harbourCharges))} />
+                <Calc label="Currency buffer (7%)" value={fmt(calc.currencyBuffer)} />
+                <Calc label="Damage buffer (3%)" value={fmt(calc.damageBuffer)} />
+                <Calc label="Estimated total import costs (at 35% customs)" value={fmt(calc.totalImportCostsWith35)} highlight />
+              </div>
+            </div>
+          )}
         </SectionCard>
 
         {/* ── Section 4 ── */}
@@ -753,7 +829,26 @@ export default function App() {
             <div className="calc-divider" />
             <Calc label="Total landed cost" value={fmt(calc.totalLanded)} highlight />
             <Calc label="Landed cost per unit" value={fmt(calc.landedPerUnit)} highlight />
+            {calc.unitsPerBoxN > 0 && (
+              <Calc label={`Landed cost per box (${calc.unitsPerBoxN} units/box)`} value={fmt(calc.landedPerBox)} highlight />
+            )}
           </div>
+          {calc.totalSupplierCostReal > 0 && (
+            <div className="scenario-35">
+              <div className="scenario-35-header">Landed cost at 35% customs duty</div>
+              <div className="calc-block">
+                <Calc label="Total supplier cost (Real)" value={fmt(calc.totalSupplierCostReal)} />
+                <Calc label="Total import costs (at 35% customs)" value={fmt(calc.totalImportCostsWith35)} />
+                <Calc label="Total misc costs" value={fmt(calc.totalMisc)} />
+                <div className="calc-divider" />
+                <Calc label="Total landed cost (at 35% customs)" value={fmt(calc.totalLandedWith35)} highlight />
+                <Calc label="Landed cost per unit (at 35% customs)" value={fmt(calc.landedPerUnitWith35)} highlight />
+                {calc.unitsPerBoxN > 0 && (
+                  <Calc label={`Landed cost per box at 35% (${calc.unitsPerBoxN} units/box)`} value={fmt(calc.landedPerBoxWith35)} highlight />
+                )}
+              </div>
+            </div>
+          )}
           <div className="breakeven-note">
             This is your breakeven price. <strong>Never sell below this.</strong>
           </div>

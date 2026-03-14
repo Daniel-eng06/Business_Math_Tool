@@ -51,90 +51,104 @@ body {
 }
 
 .app-header {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #3b82f6 100%);
-  border-bottom: none;
-  padding: 1rem 2.5rem;
+  background: transparent;
+  padding: 1rem 1rem 0.5rem;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 20px rgba(37,99,235,0.35), 0 1px 0 rgba(255,255,255,0.08) inset;
+  overflow: hidden; /* prevent any root scroll */
 }
 
 .header-inner {
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 60%, #3b82f6 100%);
   width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0.85rem 1.2rem;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem;
+  gap: 1rem;
   flex-wrap: nowrap;
+  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .header-inner > div:first-child {
-  flex-shrink: 0;
-  min-width: 220px;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
-  min-width: 220px;
+  gap: 0.8rem;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .header-logo {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.30));
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
   border-radius: 10px;
 }
 
 .app-header h1 {
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: clamp(1rem, 1.5vw, 1.4rem);
+  font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-header p {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.75);
-  margin-top: 0.15rem;
+  display: none; /* Hide description to save space for important metrics */
 }
 
 .header-summary {
   display: flex;
   flex-direction: row;
-  gap: 0rem;
+  gap: clamp(0.2rem, 0.8vw, 0.6rem);
   flex-wrap: nowrap;
   align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .hs-scenario {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.9rem;
-  padding: 0.5rem 1rem;
-  background: rgba(255,255,255,0.14);
+  gap: clamp(0.3rem, 1vw, 0.8rem);
+  padding: 0.4rem clamp(0.4rem, 1vw, 0.8rem);
+  background: rgba(255,255,255,0.1);
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.25);
-  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .hs-scenario-assumed {
-  background: rgba(253, 230, 138, 0.18);
-  border-color: rgba(253, 230, 138, 0.35);
-  margin-left: 0.5rem;
+  background: rgba(253, 230, 138, 0.12);
+  border-color: rgba(253, 230, 138, 0.25);
+  margin-left: 0;
 }
 
 .hs-scenario-label {
-  font-size: 0.68rem;
+  font-size: clamp(0.6rem, 0.8vw, 0.72rem);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-right: 0.25rem;
+  letter-spacing: 0.08em;
+  margin-right: 0;
   white-space: nowrap;
 }
 
@@ -143,47 +157,57 @@ body {
 
 .hs-divider {
   width: 1px;
-  background: rgba(255,255,255,0.2);
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.3), transparent);
   align-self: stretch;
-  margin: 0 0.75rem;
-  min-height: 40px;
+  margin: 0;
+  min-height: 100%;
 }
 
 .hs-item {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .hs-item span {
-  font-size: 0.67rem;
-  color: rgba(255,255,255,0.65);
+  font-size: clamp(0.55rem, 0.7vw, 0.65rem);
+  color: rgba(255,255,255,0.7);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.1rem;
 }
 
 .hs-item strong {
-  font-size: 1.25rem;
+  font-size: clamp(0.85rem, 1.2vw, 1.1rem);
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.02em;
   line-height: 1.15;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.25);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 .hs-item.hs-big {
-  margin-left: 0.9rem;
+  margin-left: 0;
   align-items: center;
+  background: rgba(255,255,255,0.08);
+  padding: 0.4rem clamp(0.4rem, 1vw, 0.8rem);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  justify-content: center;
 }
 
 .hs-item.hs-big strong {
-  font-size: 1.55rem;
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
   font-weight: 900;
   letter-spacing: -0.03em;
 }
 
 .hs-item strong.assumed-num { color: #fde68a; }
+.hs-item strong.pos-rev { color: #67e8f9; text-shadow: 0 0 16px rgba(103,232,249,0.4); }
 .hs-item strong.pos { color: #4ade80; text-shadow: 0 0 16px rgba(74,222,128,0.4); }
 .hs-item strong.neg { color: #fca5a5; text-shadow: 0 0 16px rgba(252,165,165,0.4); }
 
@@ -401,6 +425,27 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   background: var(--accent-dim);
   opacity: 0.5;
   margin: 0;
+}
+
+/* ── 35% customs scenario block ── */
+.scenario-35 {
+  margin-top: 1.25rem;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.scenario-35-header {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 0.9rem;
+}
+.scenario-35 .calc-block {
+  padding: 0.25rem 0;
+  background: #f0f7ff;
 }
 
 /* ── Breakeven note ── */
@@ -893,11 +938,12 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 /* Header right column */
 .header-right {
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  overflow-x: auto;
-  max-width: calc(100vw - 300px);
+  justify-content: center;
+  overflow: visible;
 }
 .app-footer {
   text-align: center;
@@ -1089,24 +1135,25 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   .app-header h1 { font-size: 1.15rem; }
   .app-header p { font-size: 0.74rem; }
 
-  .header-right { max-width: 100%; width: 100%; overflow-x: auto; }
+  .header-right { width: 100%; justify-content: flex-start; overflow: visible; }
 
   .header-summary {
     width: 100%;
     flex-wrap: wrap;
     gap: 0.4rem;
+    justify-content: flex-start;
   }
 
   .hs-scenario {
     flex-shrink: 0;
     padding: 0.4rem 0.7rem;
-    gap: 0.6rem;
+    gap: 0.5rem;
   }
 
   .hs-divider { margin: 0 0.4rem; min-height: 28px; }
 
-  .hs-item strong { font-size: 0.95rem; }
-  .hs-item.hs-big strong { font-size: 1.15rem; }
+  .hs-item strong { font-size: 0.9rem; }
+  .hs-item.hs-big strong { font-size: 1.05rem; }
   .hs-item span { font-size: 0.62rem; }
 
   .main-content { padding: 0.85rem 0.75rem 1.5rem; gap: 0.9rem; }
