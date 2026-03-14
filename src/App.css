@@ -345,26 +345,28 @@ body {
 
 .input-wrap input {
   flex: 1;
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
   background: transparent;
   border: none;
   outline: none;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 16px; /* 16px strictly prevents iOS from auto-zooming on focus */
   min-width: 0;
   width: 100%;
+  text-align: left; /* Explicitly ensure left alignment */
 }
 
 .text-input {
   width: 100%;
-  padding: 0.52rem 0.8rem;
+  padding: 0.6rem 0.8rem;
   background: #ffffff;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 16px; /* 16px to prevent iOS auto-zoom */
   outline: none;
   font-family: inherit;
+  text-align: left;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
@@ -1166,10 +1168,20 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   .hs-item.hs-big strong { font-size: 1.05rem; }
   .hs-item span { font-size: 0.62rem; }
 
-  .main-content { padding: 0.85rem 0.75rem 1.5rem; gap: 0.9rem; }
+.main-content { padding: 0.5rem 0.6rem 2.5rem; gap: 1rem; }
 
-  .card-header { padding: 0.7rem 1rem; }
-  .card-body { padding: 0.9rem 1rem; }
+    .card { border-radius: 12px; }
+    .card-header { padding: 0.8rem 1rem; }
+    .card-body { padding: 1rem 1rem; }
+
+    /* Fix iOS auto-zoom & ensure left alignment on mobile */
+    .input-wrap input, 
+    .text-input, 
+    .check-row select, 
+    .currency-select {
+      font-size: 16px !important;
+      text-align: left !important;
+    }
 
   .product-name-bar { padding: 0.6rem 0.9rem; gap: 0.6rem; }
 
