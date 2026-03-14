@@ -230,9 +230,9 @@ export default function App() {
     const sellingPriceAssumed = mg < 1 && landedPerUnitAssumed > 0 ? landedPerUnitAssumed / (1 - mg) : 0
 
     // ── 35% customs duty scenario ──
-    const customsDutyAt35 = totalSupplierCostReal * 0.35
+    const customsDutyAt35 = totalSupplierCostAssumed * 0.35 // Uses inflated Assumed Supplier Cost
     const totalImportCostsWith35 = customsDutyAt35 + agentFeeN
-    const totalLandedWith35 = totalSupplierCostReal + totalImportCostsWith35 + totalMisc
+    const totalLandedWith35 = totalSupplierCostAssumed + totalImportCostsWith35 + totalMisc
     const landedPerUnitWith35 = qty > 0 ? totalLandedWith35 / qty : 0
 
     return {
