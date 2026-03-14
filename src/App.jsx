@@ -231,7 +231,7 @@ export default function App() {
 
     // ── Agent's Quote Scenario (35% CIF Duty) ──
     const customsDutyAt35 = (totalSupplierCostAssumed + freightCost) * 0.35 // 35% of CIF (Cost + Freight)
-    const totalImportCostsWith35 = freightCost + customsDutyAt35 + agentFeeN + harbourN
+    const totalImportCostsWith35 = customsDutyAt35 + agentFeeN + harbourN // Freight excluded from final addition as requested
     const totalLandedWith35 = totalSupplierCostAssumed + totalImportCostsWith35 + totalMisc
     const landedPerUnitWith35 = qty > 0 ? totalLandedWith35 / qty : 0
 
@@ -391,8 +391,7 @@ export default function App() {
 
     // Section 3 — 35% estimate
       addEstimateSection('AGENT\'S ESTIMATED QUOTE (CLEARANCE & SHIPPING)')
-      addRow('Freight Cost', fmt(calc.freightCost))
-      addRow('Customs duty (35% of Cost + Freight)', fmt(calc.customsDutyAt35))
+      addRow('Agent flat rate (35% of Cost + Freight)', fmt(calc.customsDutyAt35))
       if (n(agentFee))       addRow('Agent fee', fmt(n(agentFee)))
       if (n(harbourCharges)) addRow('Harbour / port charges', fmt(n(harbourCharges)))
       addRow('Total Agent Quote Estimate', fmt(calc.totalImportCostsWith35), true)
@@ -766,8 +765,7 @@ export default function App() {
             <div className="scenario-35">
               <div className="scenario-35-header">Agent's Estimated Quote (Shipping & Clearance)</div>
               <div className="calc-block">
-                <Calc label="Freight Cost" value={fmt(calc.freightCost)} />
-                <Calc label="Customs duty (35% of Cost + Freight)" value={fmt(calc.customsDutyAt35)} />
+                <Calc label="Agent flat rate (35% of Cost + Freight)" value={fmt(calc.customsDutyAt35)} />
                 <Calc label="Agent fee" value={fmt(n(agentFee))} />
                 <Calc label="Harbour / port charges" value={fmt(n(harbourCharges))} />
                 <Calc label="Total Agent Quote Estimate" value={fmt(calc.totalImportCostsWith35)} highlight />
