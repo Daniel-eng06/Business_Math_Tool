@@ -93,11 +93,11 @@ export default function App() {
     setRatesLoading(true)
     setRatesError(false)
     try {
-      const res = await fetch('https://open.er-api.com/v6/latest/USD')
+      const res = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' })
       const data = await res.json()
       if (data.result === 'success') {
         setRates(data.rates)
-        setRatesUpdated(new Date(data.time_last_update_utc).toLocaleString())
+        setRatesUpdated(new Date().toLocaleString())
       } else { setRatesError(true) }
     } catch { setRatesError(true) }
     setRatesLoading(false)
