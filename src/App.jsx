@@ -191,23 +191,24 @@ export default function App() {
     const L = n(boxLength), W = n(boxWidth), H = n(boxHeight)
     const upb = n(unitsPerBox)
     const rate = n(cbmRate) || 290
-    const totalBoxes = upb > 0 ? qty / upb : 0
+    const totalBoxes = upb > 0 ? Math.ceil(qty / upb) : 0 // Fractional boxes take up space of full boxes
     const cbmPerBox = (L * W * H) / 1_000_000
     const totalCbm = cbmPerBox * totalBoxes
-    const freightCost = totalCbm * rate * usdToDisplayRate // rate is always USD
+    const freightCost = totalCbm * rate * usdToDisplayRate // rate is USD
 
-    // Sections 2+ always use REAL supplier cost as base
-    const customsDuty = totalSupplierCostReal * (n(customsDutyPct) / 100)
-    const currencyBuffer = totalSupplierCostReal * 0.07
-    const damageBuffer = totalSupplierCostReal * 0.03
+    // Factors
+    const dutyRate = n(customsDutyPct) / 100
     const agentFeeN = n(agentFee)
     const harbourN = n(harbourCharges)
-    const totalImportCosts = freightCost + customsDuty + agentFeeN + harbourN + currencyBuffer + damageBuffer
-
     const miscItems = [n(fumigation), n(localTransport), n(storage), n(packaging), n(phoneAdmin), n(other1Amount), n(other2Amount)]
     const totalMisc = miscItems.reduce((a, b) => a + b, 0)
 
-    // A) Real: all sections feed here
+    // A) Real Scenario
+    const customsDuty = totalSupplierCostReal * dutyRate
+    const currencyBuffer = totalSupplierCostReal * 0.07
+    const damageBuffer = totalSupplierCostReal * 0.03
+    const totalImportCosts = freightCost + customsDuty + agentFeeN + harbourN + currencyBuffer + damageBuffer
+    
     const totalLanded = totalSupplierCostReal + totalImportCosts + totalMisc
     const landedPerUnit = qty > 0 ? totalLanded / qty : 0
 
@@ -217,6 +218,16 @@ export default function App() {
     const totalProfit = profitPerUnit * qty
     const totalRevenue = sellingPrice * qty
     const roi = totalLanded > 0 ? (totalProfit / totalLanded) * 100 : 0
+
+    // B) Assumption (+ expenses % Scenario)
+    // Scale all variables that depend on supplier cost!
+    const customsDutyAssumed = totalSupplierCostAssumed * dutyRate
+    const currencyBufferAssumed = totalSupplierCostAssumed * 0.07
+    const damageBufferAssumed = totalSupplierCostAssumed * 0.03
+    const totalImportCostsAssumed = freightCost + customsDutyAssumed + agentFeeN + harbourN + currencyBufferAssumed + damageBufferAssumed
+    const totalLandedAssumed = totalSupplierCostAssumed + totalImportCostsAssumed + totalMisc
+    const landedPerUnitAssumed = qty > 0 ? totalLandedAssumed / qty : 0
+    const sellingPriceAssumed = mg < 1 && landedPerUnitAssumed > 0 ? landedPerUnitAssumed / (1 - mg) : 0
 
     // ── 35% customs duty scenario ──
     const customsDutyAt35 = totalSupplierCostReal * 0.35
@@ -229,12 +240,19 @@ export default function App() {
       customsDuty, currencyBuffer, damageBuffer, totalImportCosts,
       totalMisc, totalLanded, landedPerUnit,
       sellingPrice, profitPerUnit, totalProfit, totalRevenue, roi,
-      // B) Assumption: only supplier cost differs, rest same as A)
+      
+      // Real aliases for UI
       landedPerUnitReal: landedPerUnit,
-      landedPerUnitAssumed: qty > 0 ? (totalSupplierCostAssumed + totalImportCosts + totalMisc) / qty : 0,
-      // 35% customs scenario
+      sellingPriceReal: sellingPrice,
+
+      // Assumed output
+      landedPerUnitAssumed,
+      sellingPriceAssumed,
+
+      // 35% scenario
       customsDutyAt35, totalImportCostsWith35, totalLandedWith35, landedPerUnitWith35,
-      // per box
+      
+      // per box metrics
       landedPerBox: upb > 0 ? landedPerUnit * upb : 0,
       landedPerBoxWith35: upb > 0 ? landedPerUnitWith35 * upb : 0,
       unitsPerBoxN: upb,
@@ -495,12 +513,12 @@ export default function App() {
                   </div>
                   <div className="hs-item">
                     <span>Sell price</span>
-                    <strong>{fmt(n(expensesPct) > 0 ? calc.landedPerUnitReal / (1 - n(margin)/100) : calc.sellingPrice)}</strong>
+                    <strong>{fmt(calc.sellingPrice)}</strong>
                   </div>
                   {calc.unitsPerBoxN > 0 && (
                     <div className="hs-item">
                       <span>Sell price/box</span>
-                      <strong>{fmt((n(expensesPct) > 0 ? calc.landedPerUnitReal / (1 - n(margin)/100) : calc.sellingPrice) * calc.unitsPerBoxN)}</strong>
+                      <strong>{fmt(calc.sellingPrice * calc.unitsPerBoxN)}</strong>
                     </div>
                   )}
                 </div>
@@ -513,12 +531,12 @@ export default function App() {
                     </div>
                     <div className="hs-item">
                       <span>Sell price</span>
-                      <strong className="assumed-num">{fmt(calc.landedPerUnitAssumed / (1 - n(margin)/100))}</strong>
+                      <strong className="assumed-num">{fmt(calc.sellingPriceAssumed)}</strong>
                     </div>
                     {calc.unitsPerBoxN > 0 && (
                       <div className="hs-item">
                         <span>Sell price/box</span>
-                        <strong className="assumed-num">{fmt((calc.landedPerUnitAssumed / (1 - n(margin)/100)) * calc.unitsPerBoxN)}</strong>
+                        <strong className="assumed-num">{fmt(calc.sellingPriceAssumed * calc.unitsPerBoxN)}</strong>
                       </div>
                     )}
                   </div>
