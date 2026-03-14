@@ -231,7 +231,7 @@ export default function App() {
 
     // ── 35% customs duty scenario ──
     const customsDutyAt35 = totalSupplierCostReal * 0.35
-    const totalImportCostsWith35 = freightCost + customsDutyAt35 + agentFeeN + harbourN + currencyBuffer + damageBuffer
+    const totalImportCostsWith35 = customsDutyAt35 + agentFeeN
     const totalLandedWith35 = totalSupplierCostReal + totalImportCostsWith35 + totalMisc
     const landedPerUnitWith35 = qty > 0 ? totalLandedWith35 / qty : 0
 
@@ -390,13 +390,9 @@ export default function App() {
     addRow('Total import costs', fmt(calc.totalImportCosts), true)
 
     // Section 3 — 35% estimate
-    addEstimateSection('IMPORT COSTS AT 35% CUSTOMS DUTY')
-    addRow('Freight', fmt(calc.freightCost))
+    addEstimateSection('ESTIMATED SHIPPING COST AT 35% CUSTOMS DUTY')
     addRow('Customs duty at 35% of supplier cost', fmt(calc.customsDutyAt35))
     if (n(agentFee))       addRow('Agent fee', fmt(n(agentFee)))
-    if (n(harbourCharges)) addRow('Harbour / port charges', fmt(n(harbourCharges)))
-    addRow('Currency buffer (7%)', fmt(calc.currencyBuffer))
-    addRow('Damage buffer (3%)', fmt(calc.damageBuffer))
     addRow('Estimated total import costs (at 35% customs)', fmt(calc.totalImportCostsWith35), true)
 
     // Section 4 misc
@@ -769,12 +765,8 @@ export default function App() {
             <div className="scenario-35">
               <div className="scenario-35-header">Estimated shipping cost at 35% customs duty</div>
               <div className="calc-block">
-                <Calc label="Freight" value={fmt(calc.freightCost)} />
                 <Calc label="Customs duty at 35% of supplier cost" value={fmt(calc.customsDutyAt35)} />
                 <Calc label="Agent fee" value={fmt(n(agentFee))} />
-                <Calc label="Harbour / port charges" value={fmt(n(harbourCharges))} />
-                <Calc label="Currency buffer (7%)" value={fmt(calc.currencyBuffer)} />
-                <Calc label="Damage buffer (3%)" value={fmt(calc.damageBuffer)} />
                 <Calc label="Estimated total import costs (at 35% customs)" value={fmt(calc.totalImportCostsWith35)} highlight />
               </div>
             </div>
