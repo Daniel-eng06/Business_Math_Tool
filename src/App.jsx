@@ -229,9 +229,9 @@ export default function App() {
     const landedPerUnitAssumed = qty > 0 ? totalLandedAssumed / qty : 0
     const sellingPriceAssumed = mg < 1 && landedPerUnitAssumed > 0 ? landedPerUnitAssumed / (1 - mg) : 0
 
-    // ── 35% customs duty scenario ──
-    const customsDutyAt35 = totalSupplierCostAssumed * 0.35 // Uses inflated Assumed Supplier Cost
-    const totalImportCostsWith35 = customsDutyAt35 + agentFeeN
+    // ── Agent's Quote Scenario (35% CIF Duty) ──
+    const customsDutyAt35 = (totalSupplierCostAssumed + freightCost) * 0.35 // 35% of CIF (Cost + Freight)
+    const totalImportCostsWith35 = freightCost + customsDutyAt35 + agentFeeN + harbourN
     const totalLandedWith35 = totalSupplierCostAssumed + totalImportCostsWith35 + totalMisc
     const landedPerUnitWith35 = qty > 0 ? totalLandedWith35 / qty : 0
 
@@ -390,11 +390,12 @@ export default function App() {
     addRow('Total import costs', fmt(calc.totalImportCosts), true)
 
     // Section 3 — 35% estimate
-    addEstimateSection('ESTIMATED SHIPPING COST AT 35% CUSTOMS DUTY')
-    addRow('Customs duty at 35% of supplier cost', fmt(calc.customsDutyAt35))
-    if (n(agentFee))       addRow('Agent fee', fmt(n(agentFee)))
-    addRow('Estimated total import costs (at 35% customs)', fmt(calc.totalImportCostsWith35), true)
-
+      addEstimateSection('AGENT\'S ESTIMATED QUOTE (CLEARANCE & SHIPPING)')
+      addRow('Freight Cost', fmt(calc.freightCost))
+      addRow('Customs duty (35% of Cost + Freight)', fmt(calc.customsDutyAt35))
+      if (n(agentFee))       addRow('Agent fee', fmt(n(agentFee)))
+      if (n(harbourCharges)) addRow('Harbour / port charges', fmt(n(harbourCharges)))
+      addRow('Total Agent Quote Estimate', fmt(calc.totalImportCostsWith35), true)
     // Section 4 misc
     const hasMisc = [fumigation, localTransport, storage, packaging, phoneAdmin, other1Amount, other2Amount].some(v => n(v) > 0)
     if (hasMisc) {
@@ -418,14 +419,14 @@ export default function App() {
     addRow('Landed cost per unit', fmt(calc.landedPerUnit), true)
     if (calc.unitsPerBoxN > 0) addRow(`Landed cost per box (${calc.unitsPerBoxN} units/box)`, fmt(calc.landedPerBox), true)
 
-    // Section 5 — 35% estimate
-    addEstimateSection('LANDED COST AT 35% CUSTOMS DUTY')
-    addRow('Supplier cost', fmt(calc.totalSupplierCostReal))
-    addRow('Import costs (at 35% customs)', fmt(calc.totalImportCostsWith35))
-    if (hasMisc) addRow('Misc costs', fmt(calc.totalMisc))
-    addRow('Total landed cost (at 35% customs)', fmt(calc.totalLandedWith35), true)
-    addRow('Landed cost per unit (at 35% customs)', fmt(calc.landedPerUnitWith35), true)
-    if (calc.unitsPerBoxN > 0) addRow(`Landed cost per box at 35% (${calc.unitsPerBoxN} units/box)`, fmt(calc.landedPerBoxWith35), true)
+// Section 5 — Agent estimate
+      addEstimateSection('LANDED COST (WITH AGENT\'S ESTIMATE)')
+      addRow('Assumed Supplier cost', fmt(calc.totalSupplierCostAssumed))
+      addRow('Agent Quote Estimate (Freight + Clearance)', fmt(calc.totalImportCostsWith35)) 
+      if (hasMisc) addRow('Misc costs', fmt(calc.totalMisc))
+      addRow('Total landed cost (Agent Estimate)', fmt(calc.totalLandedWith35), true)
+      addRow('Landed cost per unit (Agent Estimate)', fmt(calc.landedPerUnitWith35), true)
+      if (calc.unitsPerBoxN > 0) addRow(`Landed cost per box (${calc.unitsPerBoxN} units/box)`, fmt(calc.landedPerBoxWith35), true)
 
     // Section 6
     addSection('SELLING PRICE & PROFIT')
@@ -763,11 +764,13 @@ export default function App() {
           </div>
           {calc.totalSupplierCostReal > 0 && (
             <div className="scenario-35">
-              <div className="scenario-35-header">Estimated shipping cost at 35% customs duty</div>
+              <div className="scenario-35-header">Agent's Estimated Quote (Shipping & Clearance)</div>
               <div className="calc-block">
-                <Calc label="Customs duty at 35% of supplier cost" value={fmt(calc.customsDutyAt35)} />
+                <Calc label="Freight Cost" value={fmt(calc.freightCost)} />
+                <Calc label="Customs duty (35% of Cost + Freight)" value={fmt(calc.customsDutyAt35)} />
                 <Calc label="Agent fee" value={fmt(n(agentFee))} />
-                <Calc label="Estimated total import costs (at 35% customs)" value={fmt(calc.totalImportCostsWith35)} highlight />
+                <Calc label="Harbour / port charges" value={fmt(n(harbourCharges))} />
+                <Calc label="Total Agent Quote Estimate" value={fmt(calc.totalImportCostsWith35)} highlight />
               </div>
             </div>
           )}
@@ -845,16 +848,16 @@ export default function App() {
           </div>
           {calc.totalSupplierCostReal > 0 && (
             <div className="scenario-35">
-              <div className="scenario-35-header">Landed cost at 35% customs duty</div>
+              <div className="scenario-35-header">Landed cost (With Agent's Estimate)</div>
               <div className="calc-block">
-                <Calc label="Total supplier cost (Real)" value={fmt(calc.totalSupplierCostReal)} />
-                <Calc label="Total import costs (at 35% customs)" value={fmt(calc.totalImportCostsWith35)} />
+                <Calc label="Assumed Supplier cost" value={fmt(calc.totalSupplierCostAssumed)} />
+                <Calc label="Agent Quote Estimate" value={fmt(calc.totalImportCostsWith35)} />
                 <Calc label="Total misc costs" value={fmt(calc.totalMisc)} />
                 <div className="calc-divider" />
-                <Calc label="Total landed cost (at 35% customs)" value={fmt(calc.totalLandedWith35)} highlight />
-                <Calc label="Landed cost per unit (at 35% customs)" value={fmt(calc.landedPerUnitWith35)} highlight />
+                <Calc label="Total landed cost (Agent Estimate)" value={fmt(calc.totalLandedWith35)} highlight />
+                <Calc label="Landed cost per unit (Agent Estimate)" value={fmt(calc.landedPerUnitWith35)} highlight />
                 {calc.unitsPerBoxN > 0 && (
-                  <Calc label={`Landed cost per box at 35% (${calc.unitsPerBoxN} units/box)`} value={fmt(calc.landedPerBoxWith35)} highlight />
+                  <Calc label={`Landed cost per box (${calc.unitsPerBoxN} units/box)`} value={fmt(calc.landedPerBoxWith35)} highlight />
                 )}
               </div>
             </div>
