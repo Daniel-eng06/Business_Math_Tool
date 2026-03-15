@@ -523,16 +523,16 @@ export default function App() {
                     <div className="hs-scenario-label real-label">A) Real</div>
                     <div className="hs-item">
                       <span>Landed/unit</span>
-                      <strong>{fmt(calc.landedPerUnitReal)}</strong>
+                      <strong className="real-num">{fmt(calc.landedPerUnitReal)}</strong>
                     </div>
                     <div className="hs-item">
                       <span>Sell price</span>
-                      <strong>{fmt(calc.sellingPrice)}</strong>
+                      <strong className="real-num">{fmt(calc.sellingPrice)}</strong>
                     </div>
                     {calc.unitsPerBoxN > 0 && (
                       <div className="hs-item">
                         <span>Sell price/box</span>
-                        <strong>{fmt(calc.sellingPrice * calc.unitsPerBoxN)}</strong>
+                        <strong className="real-num">{fmt(calc.sellingPrice * calc.unitsPerBoxN)}</strong>
                       </div>
                     )}
                   </div>
