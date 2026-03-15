@@ -541,16 +541,16 @@ export default function App() {
                       <div className="hs-scenario-label assumed-label">B) +{n(expensesPct)}% Expenses</div>
                       <div className="hs-item">
                         <span>Landed/unit</span>
-                        <strong className="assumed-num">{fmt(calc.landedPerUnitAssumed)}</strong>
+                        <strong className="assumed-num">{fmt(calc.landedPerUnitWith35)}</strong>
                       </div>
                       <div className="hs-item">
                         <span>Sell price</span>
-                        <strong className="assumed-num">{fmt(calc.sellingPriceAssumed)}</strong>
+                        <strong className="assumed-num">{fmt(calc.sellingPriceWith35)}</strong>
                       </div>
                       {calc.unitsPerBoxN > 0 && (
                         <div className="hs-item">
                           <span>Sell price/box</span>
-                          <strong className="assumed-num">{fmt(calc.sellingPriceAssumed * calc.unitsPerBoxN)}</strong>
+                          <strong className="assumed-num">{fmt(calc.sellingPriceWith35 * calc.unitsPerBoxN)}</strong>
                         </div>
                       )}
                     </div>
