@@ -240,6 +240,7 @@ export default function App() {
     const sellingPriceWith35 = landedPerUnitWith35 > 0 ? (mg < 1 ? landedPerUnitWith35 / (1 - mg) : landedPerUnitWith35 * (1 + mg)) : 0
     const profitPerUnitWith35 = sellingPriceWith35 - landedPerUnitWith35
     const totalProfitWith35 = profitPerUnitWith35 * qty
+    const totalRevenueWith35 = sellingPriceWith35 * qty
     const roiWith35 = totalLandedWith35 > 0 ? (totalProfitWith35 / totalLandedWith35) * 100 : 0
 
     return {
@@ -258,7 +259,7 @@ export default function App() {
 
       // 35% scenario
       customsDutyAt35, totalImportCostsWith35, totalLandedWith35, landedPerUnitWith35,
-      sellingPriceWith35, profitPerUnitWith35, totalProfitWith35, roiWith35,
+      sellingPriceWith35, profitPerUnitWith35, totalProfitWith35, totalRevenueWith35, roiWith35,
       
       // per box metrics
       landedPerBox: upb > 0 ? landedPerUnit * upb : 0,
@@ -553,17 +554,28 @@ export default function App() {
                   </div>
                 )}
                 <div className="hs-divider" />
-                <div className="hs-item hs-big">
-                  <span>Total revenue</span>
-                  <strong className="pos-rev">{fmt(calc.totalRevenue)}</strong>
+                <div className="hs-scenario">
+                  <div className="hs-scenario-label real-label">Real Profit</div>
+                  <div className="hs-item hs-big">
+                    <span>Total revenue</span>
+                    <strong className="pos-rev">{fmt(calc.totalRevenue)}</strong>
+                  </div>
+                  <div className="hs-item hs-big">
+                    <span>Net profit</span>
+                    <strong className={calc.totalProfit >= 0 ? 'pos' : 'neg'}>{fmt(calc.totalProfit)}</strong>
+                  </div>
                 </div>
-                <div className="hs-item hs-big">
-                  <span>Total profit</span>
-                  <strong className={calc.totalProfit >= 0 ? 'pos' : 'neg'}>{fmt(calc.totalProfit)}</strong>
-                </div>
-                <div className="hs-item hs-big">
-                  <span>ROI</span>
-                  <strong className={calc.roi >= 0 ? 'pos' : 'neg'}>{pct(calc.roi)}</strong>
+
+                <div className="hs-scenario hs-scenario-assumed">
+                  <div className="hs-scenario-label assumed-label">Agent Est. Profit</div>
+                  <div className="hs-item hs-big">
+                    <span>Total revenue</span>
+                    <strong className="pos-rev">{fmt(calc.totalRevenueWith35)}</strong>
+                  </div>
+                  <div className="hs-item hs-big">
+                    <span>Net profit</span>
+                    <strong className={calc.totalProfitWith35 >= 0 ? 'pos' : 'neg'}>{fmt(calc.totalProfitWith35)}</strong>
+                  </div>
                 </div>
               </div>
             )}
