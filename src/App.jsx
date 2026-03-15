@@ -213,7 +213,8 @@ export default function App() {
     const landedPerUnit = qty > 0 ? totalLanded / qty : 0
 
     const mg = n(margin) / 100
-    const sellingPrice = mg < 1 && landedPerUnit > 0 ? landedPerUnit / (1 - mg) : 0
+    // Support both Gross Margin (mg < 1) and Markup (mg >= 1) to prevent breaking if user enters 100% or more
+    const sellingPrice = landedPerUnit > 0 ? (mg < 1 ? landedPerUnit / (1 - mg) : landedPerUnit * (1 + mg)) : 0
     const profitPerUnit = sellingPrice - landedPerUnit
     const totalProfit = profitPerUnit * qty
     const totalRevenue = sellingPrice * qty
@@ -227,13 +228,19 @@ export default function App() {
     const totalImportCostsAssumed = freightCost + customsDutyAssumed + agentFeeN + harbourN + currencyBufferAssumed + damageBufferAssumed
     const totalLandedAssumed = totalSupplierCostAssumed + totalImportCostsAssumed + totalMisc
     const landedPerUnitAssumed = qty > 0 ? totalLandedAssumed / qty : 0
-    const sellingPriceAssumed = mg < 1 && landedPerUnitAssumed > 0 ? landedPerUnitAssumed / (1 - mg) : 0
+    const sellingPriceAssumed = landedPerUnitAssumed > 0 ? (mg < 1 ? landedPerUnitAssumed / (1 - mg) : landedPerUnitAssumed * (1 + mg)) : 0
 
     // ── Agent's Quote Scenario (35% CIF Duty) ──
     const customsDutyAt35 = (totalSupplierCostAssumed + freightCost) * 0.35 // 35% of CIF (Cost + Freight)
     const totalImportCostsWith35 = customsDutyAt35 + agentFeeN + harbourN // Freight excluded from final addition as requested
     const totalLandedWith35 = totalSupplierCostAssumed + totalImportCostsWith35 + totalMisc
     const landedPerUnitWith35 = qty > 0 ? totalLandedWith35 / qty : 0
+    
+    // Agent's Quote Profit
+    const sellingPriceWith35 = landedPerUnitWith35 > 0 ? (mg < 1 ? landedPerUnitWith35 / (1 - mg) : landedPerUnitWith35 * (1 + mg)) : 0
+    const profitPerUnitWith35 = sellingPriceWith35 - landedPerUnitWith35
+    const totalProfitWith35 = profitPerUnitWith35 * qty
+    const roiWith35 = totalLandedWith35 > 0 ? (totalProfitWith35 / totalLandedWith35) * 100 : 0
 
     return {
       totalSupplierCostReal, totalSupplierCostAssumed, totalBoxes, cbmPerBox, totalCbm, freightCost,
@@ -251,6 +258,7 @@ export default function App() {
 
       // 35% scenario
       customsDutyAt35, totalImportCostsWith35, totalLandedWith35, landedPerUnitWith35,
+      sellingPriceWith35, profitPerUnitWith35, totalProfitWith35, roiWith35,
       
       // per box metrics
       landedPerBox: upb > 0 ? landedPerUnit * upb : 0,
@@ -430,11 +438,18 @@ export default function App() {
     // Section 6
     addSection('SELLING PRICE & PROFIT')
     addRow('Target margin', `${n(margin)}%`)
-    addRow('Selling price per unit', fmt(calc.sellingPrice), true)
+    addRow('Selling price per unit (Real)', fmt(calc.sellingPrice), true)
     if (calc.unitsPerBoxN > 0) addRow(`Selling price per box (${calc.unitsPerBoxN} units/box)`, fmt(calc.sellingPrice * calc.unitsPerBoxN), true)
-    addRow('Profit per unit', fmt(calc.profitPerUnit))
-    addRow(`Total profit (${n(quantity).toLocaleString()} units)`, fmt(calc.totalProfit), true)
-    addRow('ROI  (Total profit ÷ Total landed cost)', pct(calc.roi), true)
+    addRow('Profit per unit (Real)', fmt(calc.profitPerUnit))
+    addRow(`Total profit (Real) (${n(quantity).toLocaleString()} units)`, fmt(calc.totalProfit), true)
+    addRow('ROI (Real)  (Total profit ÷ Total landed cost)', pct(calc.roi), true)
+    
+    // Section 6 — Agent estimate
+    addEstimateSection('PROFIT (WITH AGENT\'S ESTIMATE)')
+    addRow('Selling price per unit (Agent Estimate)', fmt(calc.sellingPriceWith35), true)
+    addRow('Profit per unit (Agent Estimate)', fmt(calc.profitPerUnitWith35))
+    addRow(`Total profit (Agent Estimate) (${n(quantity).toLocaleString()} units)`, fmt(calc.totalProfitWith35), true)
+    addRow('ROI (Agent Estimate)', pct(calc.roiWith35), true)
 
     // Footer
     const pageCount = doc.internal.getNumberOfPages()
@@ -878,16 +893,27 @@ export default function App() {
             </div>
           </div>
           <div className="field-grid">
-            <Field label="Target margin">
+            <Field label="Target margin (supports both Margin & Markup %)">
               <NumInput value={margin} onChange={setMargin} suffix="%" />
             </Field>
           </div>
           <div className="calc-block">
-            <Calc label={`Selling price (landed ÷ (1 − ${n(margin)}%))`} value={fmt(calc.sellingPrice)} highlight />
-            <Calc label="Profit per unit" value={fmt(calc.profitPerUnit)} />
-            <Calc label={`Total profit (${n(quantity).toLocaleString()} units)`} value={fmt(calc.totalProfit)} highlight />
-            <Calc label="ROI" value={pct(calc.roi)} highlight />
+            <Calc label={`Selling price (Real Landed)`} value={fmt(calc.sellingPrice)} highlight />
+            <Calc label="Profit per unit (Real)" value={fmt(calc.profitPerUnit)} />
+            <Calc label={`Total profit (Real) (${n(quantity).toLocaleString()} units)`} value={fmt(calc.totalProfit)} highlight />
+            <Calc label="ROI (Real)" value={pct(calc.roi)} highlight />
           </div>
+          {calc.totalSupplierCostReal > 0 && (
+            <div className="scenario-35">
+              <div className="scenario-35-header">Profit with Agent's Estimated Quote</div>
+              <div className="calc-block">
+                <Calc label="Selling price (Agent Estimate)" value={fmt(calc.sellingPriceWith35)} highlight />
+                <Calc label="Profit per unit (Agent Estimate)" value={fmt(calc.profitPerUnitWith35)} />
+                <Calc label={`Total profit (Agent Estimate)`} value={fmt(calc.totalProfitWith35)} highlight />
+                <Calc label="ROI (Agent Estimate)" value={pct(calc.roiWith35)} highlight />
+              </div>
+            </div>
+          )}
         </SectionCard>
 
         {/* ── Section 7 ── */}
@@ -990,12 +1016,12 @@ export default function App() {
             {[
               ['CBM per box', 'L × W × H ÷ 1,000,000'],
               ['Total CBM', 'CBM per box × number of boxes'],
-              ['Freight cost', 'Total CBM × $290'],
+              ['Freight cost', 'Total CBM × rate'],
               ['Landed cost', 'Supplier cost + all import costs + misc'],
               ['Landed cost per unit', 'Total landed ÷ quantity'],
-              ['Selling price', 'Landed per unit ÷ (1 − margin%)'],
+              ['Selling price', 'Landed per unit ÷ (1 − margin%) OR Landed × (1 + markup%)'],
               ['Profit per unit', 'Selling price − landed per unit'],
-              ['Total profit', 'Profit per unit × units sold'],
+              ['Total profit', 'Profit per unit × qty'],
               ['ROI', 'Total profit ÷ total landed × 100'],
             ].map(([formula, calc]) => (
               <div key={formula} className="formula-row">
