@@ -143,12 +143,11 @@ body {
   margin-left: 0;
 }
 
-/* Price scenarios sit side-by-side in a row */
+/* Price scenarios stack vertically, same as profit side */
 .hs-prices {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.5rem;
   flex-shrink: 0;
 }
 
