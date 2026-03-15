@@ -517,65 +517,74 @@ export default function App() {
           <div className="header-right">
             {calc.landedPerUnit > 0 && (
               <div className="header-summary">
-                <div className="hs-scenario">
-                  <div className="hs-scenario-label real-label">A) Real</div>
-                  <div className="hs-item">
-                    <span>Landed/unit</span>
-                    <strong>{fmt(calc.landedPerUnitReal)}</strong>
-                  </div>
-                  <div className="hs-item">
-                    <span>Sell price</span>
-                    <strong>{fmt(calc.sellingPrice)}</strong>
-                  </div>
-                  {calc.unitsPerBoxN > 0 && (
-                    <div className="hs-item">
-                      <span>Sell price/box</span>
-                      <strong>{fmt(calc.sellingPrice * calc.unitsPerBoxN)}</strong>
-                    </div>
-                  )}
-                </div>
-                {n(expensesPct) > 0 && (
-                  <div className="hs-scenario hs-scenario-assumed">
-                    <div className="hs-scenario-label assumed-label">B) +{n(expensesPct)}% Expenses</div>
+                {/* ── Price scenarios (horizontal) ── */}
+                <div className="hs-prices">
+                  <div className="hs-scenario">
+                    <div className="hs-scenario-label real-label">A) Real</div>
                     <div className="hs-item">
                       <span>Landed/unit</span>
-                      <strong className="assumed-num">{fmt(calc.landedPerUnitAssumed)}</strong>
+                      <strong>{fmt(calc.landedPerUnitReal)}</strong>
                     </div>
                     <div className="hs-item">
                       <span>Sell price</span>
-                      <strong className="assumed-num">{fmt(calc.sellingPriceAssumed)}</strong>
+                      <strong>{fmt(calc.sellingPrice)}</strong>
                     </div>
                     {calc.unitsPerBoxN > 0 && (
                       <div className="hs-item">
                         <span>Sell price/box</span>
-                        <strong className="assumed-num">{fmt(calc.sellingPriceAssumed * calc.unitsPerBoxN)}</strong>
+                        <strong>{fmt(calc.sellingPrice * calc.unitsPerBoxN)}</strong>
                       </div>
                     )}
                   </div>
-                )}
-                <div className="hs-divider" />
-                <div className="hs-scenario">
-                  <div className="hs-scenario-label real-label">Real Profit</div>
-                  <div className="hs-item hs-big">
-                    <span>Total revenue</span>
-                    <strong className="pos-rev">{fmt(calc.totalRevenue)}</strong>
-                  </div>
-                  <div className="hs-item hs-big">
-                    <span>Net profit</span>
-                    <strong className={calc.totalProfit >= 0 ? 'pos' : 'neg'}>{fmt(calc.totalProfit)}</strong>
-                  </div>
+                  {n(expensesPct) > 0 && (
+                    <div className="hs-scenario hs-scenario-assumed">
+                      <div className="hs-scenario-label assumed-label">B) +{n(expensesPct)}% Expenses</div>
+                      <div className="hs-item">
+                        <span>Landed/unit</span>
+                        <strong className="assumed-num">{fmt(calc.landedPerUnitAssumed)}</strong>
+                      </div>
+                      <div className="hs-item">
+                        <span>Sell price</span>
+                        <strong className="assumed-num">{fmt(calc.sellingPriceAssumed)}</strong>
+                      </div>
+                      {calc.unitsPerBoxN > 0 && (
+                        <div className="hs-item">
+                          <span>Sell price/box</span>
+                          <strong className="assumed-num">{fmt(calc.sellingPriceAssumed * calc.unitsPerBoxN)}</strong>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <div className="hs-scenario hs-scenario-assumed">
-                  <div className="hs-scenario-label assumed-label">Agent Est. Profit</div>
-                  <div className="hs-item hs-big">
-                    <span>Total revenue</span>
-                    <strong className="pos-rev">{fmt(calc.totalRevenueWith35)}</strong>
+                <div className="hs-divider" />
+
+                {/* ── Profit blocks (stacked vertically) ── */}
+                <div className="hs-profit-stack">
+                  <div className="hs-scenario">
+                    <div className="hs-scenario-label real-label">Real Profit</div>
+                    <div className="hs-item hs-big">
+                      <span>Total revenue</span>
+                      <strong className="pos-rev">{fmt(calc.totalRevenue)}</strong>
+                    </div>
+                    <div className="hs-item hs-big">
+                      <span>Net profit</span>
+                      <strong className={calc.totalProfit >= 0 ? 'pos' : 'neg'}>{fmt(calc.totalProfit)}</strong>
+                    </div>
                   </div>
-                  <div className="hs-item hs-big">
-                    <span>Net profit</span>
-                    <strong className={calc.totalProfitWith35 >= 0 ? 'pos' : 'neg'}>{fmt(calc.totalProfitWith35)}</strong>
-                  </div>
+                  {n(expensesPct) > 0 && (
+                    <div className="hs-scenario hs-scenario-assumed">
+                      <div className="hs-scenario-label assumed-label">Agent Est. Profit</div>
+                      <div className="hs-item hs-big">
+                        <span>Total revenue</span>
+                        <strong className="pos-rev">{fmt(calc.totalRevenueWith35)}</strong>
+                      </div>
+                      <div className="hs-item hs-big">
+                        <span>Net profit</span>
+                        <strong className={calc.totalProfitWith35 >= 0 ? 'pos' : 'neg'}>{fmt(calc.totalProfitWith35)}</strong>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

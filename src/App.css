@@ -143,6 +143,23 @@ body {
   margin-left: 0;
 }
 
+/* Price scenarios sit side-by-side in a row */
+.hs-prices {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+/* Profit blocks stack vertically */
+.hs-profit-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 .hs-scenario-label {
   font-size: clamp(0.6rem, 0.8vw, 0.72rem);
   font-weight: 800;
