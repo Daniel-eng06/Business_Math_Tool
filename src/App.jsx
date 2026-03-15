@@ -574,7 +574,7 @@ export default function App() {
                   </div>
                   {n(expensesPct) > 0 && (
                     <div className="hs-scenario hs-scenario-assumed">
-                      <div className="hs-scenario-label assumed-label">Agent Est. Profit</div>
+                      <div className="hs-scenario-label assumed-label">Estimated Profit</div>
                       <div className="hs-item hs-big">
                         <span>Total revenue</span>
                         <strong className="pos-rev">{fmt(calc.totalRevenueWith35)}</strong>
